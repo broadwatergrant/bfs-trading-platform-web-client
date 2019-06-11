@@ -1,6 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { Quote } from '../models/quote';
+import { IntradayData } from '../models/intraday-data';
 
 @Injectable({
   providedIn: 'root'
@@ -14,10 +17,13 @@ export class AlphaVantageService {
 
   functionQueryParamIdentifier = "function";
   globalQuoteFunctionQueryParam = "GLOBAL_QUOTE";
+  intraDayFunctionQueryParam = "TIME_SERIES_INTRADAY";
   quoteFunctionQueryParam = this.globalQuoteFunctionQueryParam;
 
   symbolQueryParamIdentifier = "symbol";
   
+  intervalQueryParamIdentifier = "interval";
+  fiveMinIntervalQueryParam = "5min";
 
   constructor(private http: HttpClient) { }
 
@@ -37,15 +43,74 @@ export class AlphaVantageService {
     return this.addQueryParam( baseURL, this.apiKeyQueryParamIdentifier, this.apikey );
   }
 
-  getQuote(symbol: string) {
+  private addIntervalParam( baseURL: string, intervalValue: string ) {
+    return this.addQueryParam( baseURL, this.intervalQueryParamIdentifier, intervalValue );
+  }
+
+  getQuote(symbol: string): Observable<Quote> {
     
     let queryURL = this.baseQueryURL;
     queryURL = this.addFunctionParam( queryURL, this.quoteFunctionQueryParam );
     queryURL = this.addSymbolParam( queryURL, symbol );
     queryURL = this.addApiKey( queryURL );
 
-    console.log( queryURL );
-
-    return this.http.get( queryURL );
+    return this.http.get( queryURL ).pipe(
+      map( avGlobalQuote => {
+        return {
+          symbol: avGlobalQuote["Global Quote"]["01. symbol"],
+          price: +avGlobalQuote["Global Quote"]["05. price"],
+          open: +avGlobalQuote["Global Quote"]["02. open"],
+          high: +avGlobalQuote["Global Quote"]["03. high"],
+          low: +avGlobalQuote["Global Quote"]["04. low"],
+          volume: +avGlobalQuote["Global Quote"]["06. volume"]
+        }
+      } )
+    );
   }
+
+  getIntraDayData(symbol: string): Observable<IntradayData> {
+
+    let interval = this.fiveMinIntervalQueryParam
+
+    let queryURL = this.baseQueryURL;
+    queryURL = this.addFunctionParam( queryURL, this.intraDayFunctionQueryParam );
+    queryURL = this.addIntervalParam( queryURL, interval );
+    queryURL = this.addSymbolParam( queryURL, symbol );
+    queryURL = this.addApiKey( queryURL );
+
+    return this.http.get( queryURL ) .pipe(
+      map( data => {
+        let result: IntradayData = {
+          metaData: {
+            information: data["Meta Data"]["1. Information"],
+            symbol: data["Meta Data"]["2. Symbol"],
+            lastRefreshed: new Date(data["Meta Data"]["3. Last Refreshed"] + " GMT-0400"),
+            interval: data["Meta Data"]["4. Interval"]
+          },
+          quoteData: []
+        }
+
+        let quoteDataKey = "Time Series (" + interval + ")" 
+
+        Object.keys( data[quoteDataKey]).forEach( (key, index) => {
+
+          let quoteData = data[quoteDataKey][key];
+
+          result.quoteData.push({
+            symbol: symbol,
+            open: +quoteData["1. open"],
+            high: +quoteData["2. high"],
+            low: +quoteData["3. low"],
+            close: +quoteData["4. close"],
+            volume: +quoteData["5. volume"],
+            timestamp: new Date(key + " GMT-0400")
+          })
+        } );
+
+        return result;
+      })
+    );
+  }
+
+
 }

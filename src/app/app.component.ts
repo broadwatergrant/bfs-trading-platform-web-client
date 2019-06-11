@@ -16,8 +16,8 @@ export class AppComponent implements OnInit {
 
   ngOnInit() {
 
-    this.alphaVantageService.getQuote( "aapl" ).subscribe(data => {
-      console.log( "From alpha-vantage: " )
+    this.alphaVantageService.getIntraDayData( "msft" ).subscribe(data => {
+      console.log( "From service: " )
       console.log( data );
     });
 

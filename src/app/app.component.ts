@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import * as CanvasJS from '../assets/canvasjs.min';
+import * as CanvasJS from 'src/assets/canvasjs.min';
+import { AlphaVantageService } from 'src/app/services/alpha-vantage.service';
 
 @Component({
   selector: 'app-root',
@@ -11,7 +12,14 @@ export class AppComponent implements OnInit {
 
   title = 'bfs-trading-platform-web-client';
 
+  constructor(private alphaVantageService: AlphaVantageService) {}
+
   ngOnInit() {
+
+    this.alphaVantageService.getQuote( "aapl" ).subscribe(data => {
+      console.log( "From alpha-vantage: " )
+      console.log( data );
+    });
 
     let chart = new CanvasJS.Chart("chartContainer", {
       animationEnabled: true,

@@ -7,5 +7,5 @@ export class IntradayData {
         lastRefreshed: Date,
         interval: string
     }
-    data: Quote[]
+    quoteData: Quote[]
 }

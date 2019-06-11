@@ -24,6 +24,7 @@ export class AlphaVantageService {
   
   intervalQueryParamIdentifier = "interval";
   fiveMinIntervalQueryParam = "5min";
+  tenMinIntervalQueryParam = "15min";
 
   constructor(private http: HttpClient) { }
 
@@ -70,7 +71,7 @@ export class AlphaVantageService {
 
   getIntraDayData(symbol: string): Observable<IntradayData> {
 
-    let interval = this.fiveMinIntervalQueryParam
+    let interval = this.tenMinIntervalQueryParam;
 
     let queryURL = this.baseQueryURL;
     queryURL = this.addFunctionParam( queryURL, this.intraDayFunctionQueryParam );
@@ -91,10 +92,16 @@ export class AlphaVantageService {
         }
 
         let quoteDataKey = "Time Series (" + interval + ")" 
+        let lastQuoteTimestamp: Date;
 
         Object.keys( data[quoteDataKey]).forEach( (key, index) => {
 
           let quoteData = data[quoteDataKey][key];
+          let quoteTimestamp: Date = new Date(key + " GMT-0400");
+
+          if ( lastQuoteTimestamp && lastQuoteTimestamp.getDate() != quoteTimestamp.getDate()) {
+            return;
+          }
 
           result.quoteData.push({
             symbol: symbol,
@@ -103,8 +110,10 @@ export class AlphaVantageService {
             low: +quoteData["3. low"],
             close: +quoteData["4. close"],
             volume: +quoteData["5. volume"],
-            timestamp: new Date(key + " GMT-0400")
+            timestamp: quoteTimestamp
           })
+
+          lastQuoteTimestamp = quoteTimestamp;
         } );
 
         return result;

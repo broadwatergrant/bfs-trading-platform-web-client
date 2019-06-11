@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import * as CanvasJS from 'src/assets/canvasjs.min';
 import { AlphaVantageService } from 'src/app/services/alpha-vantage.service';
 
@@ -11,39 +12,53 @@ import { AlphaVantageService } from 'src/app/services/alpha-vantage.service';
 export class AppComponent implements OnInit {
 
   title = 'bfs-trading-platform-web-client';
+  datapoints = [];
+  subtitles = [];
+  chart: CanvasJS.Chart;
 
-  constructor(private alphaVantageService: AlphaVantageService) {}
+  constructor(private alphaVantageService: AlphaVantageService, private datepipe: DatePipe) {}
 
   ngOnInit() {
 
-    this.alphaVantageService.getIntraDayData( "msft" ).subscribe(data => {
-      console.log( "From service: " )
-      console.log( data );
+    this.alphaVantageService.getIntraDayData( "msft" ).subscribe(intradayData => {
+
+      intradayData.quoteData.forEach( quote => {
+
+        this.datapoints.push( { 
+          x: quote.timestamp, 
+          y: [
+            quote.open,
+            quote.high,
+            quote.low,
+            quote.close
+          ] 
+        } );
+
+      });
+      
+      this.chart.render();
     });
 
-    let chart = new CanvasJS.Chart("chartContainer", {
+    let todayDateString: string = this.datepipe.transform(
+      new Date(),
+      'yyyy-MM-dd'
+    );
+
+    this.chart = new CanvasJS.Chart("chartContainer", {
       animationEnabled: true,
       exportEnabled: true,
+      theme: "light1",
       title: {
-        text: "Basic Column Chart in Angular"
+        text: "Microsoft Intraday Data"
+      },
+      subtitles: [ { text: todayDateString } ],
+      axisY: {
+        includeZero: false
       },
       data: [{
-        type: "column",
-        dataPoints: [
-          { y: 71, label: "Apple" },
-          { y: 55, label: "Mango" },
-          { y: 50, label: "Orange" },
-          { y: 65, label: "Banana" },
-          { y: 95, label: "Pineapple" },
-          { y: 68, label: "Pears" },
-          { y: 28, label: "Grapes" },
-          { y: 34, label: "Lychee" },
-          { y: 14, label: "Jackfruit" }
-        ]
+        type: "ohlc",
+        dataPoints: this.datapoints
       }]
     });
-
-    chart.render();
-
   }
 }

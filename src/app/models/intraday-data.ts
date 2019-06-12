@@ -5,7 +5,8 @@ export class IntradayData {
         information: string,
         symbol: string,
         lastRefreshed: Date,
-        interval: string
+        interval: string,
+        name?: string
     }
     quoteData: Quote[]
 }

@@ -26,7 +26,7 @@ export class AlphaVantageService {
   
   intervalQueryParamIdentifier = "interval";
   fiveMinIntervalQueryParam = "5min";
-  tenMinIntervalQueryParam = "15min";
+  fifteenMinIntervalQueryParam = "15min";
 
   constructor(private http: HttpClient) { }
 
@@ -77,7 +77,7 @@ export class AlphaVantageService {
 
   getIntraDayData(symbol: string): Observable<IntradayData> {
 
-    let interval = this.tenMinIntervalQueryParam;
+    let interval = this.fiveMinIntervalQueryParam;
 
     let queryURL = this.baseQueryURL;
     queryURL = this.addFunctionParam( queryURL, this.intraDayFunctionQueryParam );
@@ -87,6 +87,11 @@ export class AlphaVantageService {
 
     return this.http.get( queryURL ) .pipe(
       map( data => {
+
+        if( !data["Meta Data"] ) {
+          throw data;
+        }
+
         let result: IntradayData = {
           metaData: {
             information: data["Meta Data"]["1. Information"],

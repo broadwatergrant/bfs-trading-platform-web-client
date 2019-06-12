@@ -17,6 +17,8 @@ import { AlphaVantageService } from 'src/app/services/alpha-vantage.service';
 import { IntradayData } from 'src/app/models/intraday-data';
 import { Quote } from 'src/app/models/quote';
 
+/* Chart Namespace */
+
 namespace Chart {
 
   export const PublicProperties = {
@@ -61,6 +63,9 @@ export class ChartComponent implements OnInit, OnChanges {
   private datapoints: any[] = [];
   private chart: CanvasJS.Chart;
   private cachedDataSet: IntradayData;
+
+  dataPlotTypes: string[] = [];
+  selectedDataPlotType: string;
 
   /* Private Functions */
 
@@ -145,8 +150,6 @@ export class ChartComponent implements OnInit, OnChanges {
       animationEnabled: true,
       exportEnabled: true,
       theme: "light1",
-      title: { text: this.chartTitle },
-      subtitles: [{ text: this.chartSubtitle }],
       axisY: {
         includeZero: false
       },
@@ -174,9 +177,11 @@ export class ChartComponent implements OnInit, OnChanges {
 
   /* Lifecycle Functions */
 
-  ngOnInit() {
-
-    
+  ngOnInit() {  
+    Object.values(Chart.DataPlotType).forEach( dataPlotType => {
+      this.dataPlotTypes.push(dataPlotType);
+    });
+    this.selectedDataPlotType = Chart.DataPlotType[this.chartDataPlotType];
   }
 
   ngOnChanges(changes: {[propKey: string]: SimpleChange}) {
@@ -193,10 +198,13 @@ export class ChartComponent implements OnInit, OnChanges {
     }
   }
 
-  onBtnClick() {
-    this.chartDataPlotType = this.chartDataPlotType == Chart.DataPlotType.line
-      ? Chart.DataPlotType.ohlc
-      : Chart.DataPlotType.line;
-    this.reloadChart(this.cachedDataSet);
+  onDataPlotTypeValueChanged() {
+
+    let selectedDataPlotType: Chart.DataPlotType = Chart.DataPlotType[this.selectedDataPlotType];
+
+    if( selectedDataPlotType != this.chartDataPlotType) {
+      this.chartDataPlotType = selectedDataPlotType
+      this.reloadChart(this.cachedDataSet);
+    }
   }
 }

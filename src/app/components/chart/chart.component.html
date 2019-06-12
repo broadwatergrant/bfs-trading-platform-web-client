@@ -1,4 +1,8 @@
 <div>
-<button (click)="onBtnClick()">Line/OHLC</button>
+<h1>{{chartTitle}}</h1>
+<h4>{{chartSubtitle}}</h4>
+<select [(ngModel)]="selectedDataPlotType" (change)="onDataPlotTypeValueChanged()">
+    <option *ngFor="let t of dataPlotTypes" value={{t}}>{{t}}</option>
+</select>
 <div id="chartContainer" style="height: 370px; width: 100%;"></div>
 </div>

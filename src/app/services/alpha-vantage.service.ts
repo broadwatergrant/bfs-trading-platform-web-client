@@ -18,8 +18,10 @@ export class AlphaVantageService {
   functionQueryParamIdentifier = "function";
   globalQuoteFunctionQueryParam = "GLOBAL_QUOTE";
   intraDayFunctionQueryParam = "TIME_SERIES_INTRADAY";
+  symbolSearchFunctionParam = "SYMBOL_SEARCH";
   quoteFunctionQueryParam = this.globalQuoteFunctionQueryParam;
 
+  keywordQueryParamIdentifier = "keywords";
   symbolQueryParamIdentifier = "symbol";
   
   intervalQueryParamIdentifier = "interval";
@@ -46,6 +48,10 @@ export class AlphaVantageService {
 
   private addIntervalParam( baseURL: string, intervalValue: string ) {
     return this.addQueryParam( baseURL, this.intervalQueryParamIdentifier, intervalValue );
+  }
+
+  private addKeywordParam( baseURL: string, keyword: string ) {
+    return this.addQueryParam( baseURL, this.keywordQueryParamIdentifier, keyword );
   }
 
   getQuote(symbol: string): Observable<Quote> {
@@ -117,6 +123,26 @@ export class AlphaVantageService {
         } );
 
         return result;
+      })
+    );
+  }
+
+  getSymbolName(symbol: string): Observable<string> {
+
+    let queryURL = this.baseQueryURL;
+    queryURL = this.addFunctionParam( queryURL, this.symbolSearchFunctionParam );
+    queryURL = this.addKeywordParam( queryURL, symbol );
+    queryURL = this.addApiKey( queryURL );
+
+    return this.http.get( queryURL ).pipe(
+      map( data => {
+
+        let firstMatch = data["bestMatches"][0];
+        if( +firstMatch["9. matchScore"] == 1.0) {
+          return firstMatch["2. name"];
+        } 
+        throw data;
+
       })
     );
   }

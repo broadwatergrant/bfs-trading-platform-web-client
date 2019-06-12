@@ -9,12 +9,18 @@ import { Component, OnInit } from '@angular/core';
 export class AppComponent implements OnInit {
 
   title = 'bfs-trading-platform-web-client';
+  symbol: string = "msft";
+  symbolSearch: string = "msft";
   
   constructor() {
 
   }
 
   ngOnInit() {
-    
+
+  }
+
+  searchSymbol() {
+    this.symbolSearch = this.symbol;
   }
 }

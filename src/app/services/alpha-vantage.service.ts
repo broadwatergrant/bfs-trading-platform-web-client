@@ -77,21 +77,35 @@ export class AlphaVantageService {
 
   getIntraDayData(symbol: string): Observable<IntradayData> {
 
-    let interval = this.fiveMinIntervalQueryParam;
+    // Member variables
+    let queryURL: string;
+    let interval: string;
+    let quoteDataKey: string;
+    let lastQuoteTimestamp: Date;
 
-    let queryURL = this.baseQueryURL;
+    // Initialize
+    interval = this.fiveMinIntervalQueryParam;
+    quoteDataKey = "Time Series (" + interval + ")";
+
+    // Structure query
+    queryURL = this.baseQueryURL;
     queryURL = this.addFunctionParam( queryURL, this.intraDayFunctionQueryParam );
     queryURL = this.addIntervalParam( queryURL, interval );
     queryURL = this.addSymbolParam( queryURL, symbol );
     queryURL = this.addApiKey( queryURL );
 
-    return this.http.get( queryURL ) .pipe(
+    // Perform get request
+    return this.http.get( queryURL ).pipe(
+      
+      // Map raw data into internal data structure
       map( data => {
 
+        // Expect meta data in response, throw if there is no meta data in response 
         if( !data["Meta Data"] ) {
           throw data;
         }
 
+        // Map meta data
         let result: IntradayData = {
           metaData: {
             information: data["Meta Data"]["1. Information"],
@@ -102,18 +116,18 @@ export class AlphaVantageService {
           quoteData: []
         }
 
-        let quoteDataKey = "Time Series (" + interval + ")" 
-        let lastQuoteTimestamp: Date;
-
-        Object.keys( data[quoteDataKey]).forEach( (key, index) => {
+        // For each data point...
+        Object.keys( data[quoteDataKey] ).forEach( (key, index) => {
 
           let quoteData = data[quoteDataKey][key];
           let quoteTimestamp: Date = new Date(key + " GMT-0400");
 
+          // Only return data for one singular calendar day
           if ( lastQuoteTimestamp && lastQuoteTimestamp.getDate() != quoteTimestamp.getDate()) {
             return;
           }
 
+          // Add the data point to the resulting object
           result.quoteData.push({
             symbol: symbol,
             open: +quoteData["1. open"],
@@ -124,6 +138,7 @@ export class AlphaVantageService {
             timestamp: quoteTimestamp
           })
 
+          // Prepare for next iteration
           lastQuoteTimestamp = quoteTimestamp;
         } );
 
@@ -151,6 +166,4 @@ export class AlphaVantageService {
       })
     );
   }
-
-
 }

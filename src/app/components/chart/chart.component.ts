@@ -103,6 +103,12 @@ export class ChartComponent implements OnInit, OnChanges {
 
   private fetchNewChartData() {
 
+    // Guard
+    if( !this.symbol ) {
+      // Todo: alert? 
+      return;
+    }
+
     switch( this.chartDataTimeSeries ) {
       case Chart.TimeSeries.intraday:
         this.alphaVantageService.getIntraDayData( this.symbol ).subscribe(
@@ -187,6 +193,9 @@ export class ChartComponent implements OnInit, OnChanges {
   ngOnChanges(changes: {[propKey: string]: SimpleChange}) {
 
     for( let changedPropertyIdentifier in changes ) {
+
+      console.log( changedPropertyIdentifier );
+      console.log( changes[ changedPropertyIdentifier ] );
 
       switch( changedPropertyIdentifier ) {
         case Chart.PublicProperties.SYMBOL:

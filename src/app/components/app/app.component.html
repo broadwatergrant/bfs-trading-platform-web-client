@@ -1,0 +1,15 @@
+<div>
+    <form [formGroup]="searchSymbolFormGroup" (ngSubmit)="onSubmit(searchSymbolFormGroup.value)">
+
+        <div>
+            <label>Search for Symbol:</label>
+            <input type="text" formControlName="symbol">
+        </div>
+
+        <button type="submit">Search</button>
+
+    </form>
+    <br />
+    <app-chart [symbol]="chartSymbol"></app-chart>
+</div>
+

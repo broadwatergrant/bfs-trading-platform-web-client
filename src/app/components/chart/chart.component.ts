@@ -8,7 +8,7 @@
  * 
  *****************************************************************************/
 
-/* Dependencies */
+/* Dependencies **************************************************************/
 
 import { Component, OnInit, OnChanges, SimpleChange, Input } from '@angular/core';
 import { DatePipe } from '@angular/common';
@@ -16,26 +16,33 @@ import * as CanvasJS from 'src/assets/canvasjs.min';
 import { AlphaVantageService } from 'src/app/services/alpha-vantage.service';
 import { IntradayData } from 'src/app/models/intraday-data';
 import { Quote } from 'src/app/models/quote';
+import { Observable } from 'rxjs';
 
-/* Chart Namespace */
+/* Chart Namespace ***********************************************************/
 
 namespace Chart {
 
+  /** All public property identifiers on the ChartComponent class. */
   export const PublicProperties = {
+    /** The financial symbol for which to display data. */
     SYMBOL: "symbol"
   };
 
+  /** All data plot types supported by the ChartComponent. */
   export enum DataPlotType {
+
+    /** Open, high, low, close plot type. */
     ohlc = "ohlc",
+
+    /** Line plot type. */
     line = "line"
   }
 
+  /** All time series supported by the ChartComponent. */
   export enum TimeSeries {
     intraday = "intraday"
   }
 }
-
-/* Component Decorator */
 
 @Component({
   selector: 'app-chart',
@@ -43,32 +50,61 @@ namespace Chart {
   styleUrls: ['./chart.component.css']
 })
 
-/* Chart Component Controlling Class */
-
+/** Controlling Class of the ChartComponent. */
 export class ChartComponent implements OnInit, OnChanges {
 
-  /* Member Variables */
+  /* Member Variables ********************************************************/
 
-  // Constants
+  /** The document model identifier. */
   CHART_DOM_ID = "chartContainer";
 
-  // Public properties
+  /** The financial symbol for which to display data.  */
   @Input() symbol: string;
 
   // Private members
+
+  /**
+   * The title of the chart.
+   * Expected to be the full name corresponding the the Financial Symbol.
+   */
   private chartTitle: string = "Microsoft";
+
+  /**
+   * The subtitle of the chart.
+   * Expected to be the time range of the displayed chart data.
+   */
   private chartSubtitle: string;
+
+  /** The current chart type. */
   private chartDataPlotType: Chart.DataPlotType = Chart.DataPlotType.line;
+  
+  /** The current financial data time series. */
   private chartDataTimeSeries: Chart.TimeSeries = Chart.TimeSeries.intraday;
+
+  /** The datapoints that are used when rendering the graph */
   private datapoints: any[] = [];
+
+  /** The CanvasJS chart reference */
   private chart: CanvasJS.Chart;
+
+  /** Cache the data set for when changing between chart types */
   private cachedDataSet: IntradayData;
 
   dataPlotTypes: string[] = [];
   selectedDataPlotType: string;
 
-  /* Private Functions */
+  /* Private Functions *******************************************************/
 
+  /***************************************************************************
+   *  
+   * @description
+   *   Returns the correctly formatted data point for a given quote.
+   *   Formats the data point based on the current data plot type.
+   * 
+   * @param quote The quote to format as a datapoint.
+   * @return A datapoint with the values from quote.
+   * 
+   ***************************************************************************/
   private getDataPointForQuote(quote: Quote): any {
     
     switch (this.chartDataPlotType) {
@@ -92,16 +128,39 @@ export class ChartComponent implements OnInit, OnChanges {
     }
   }
 
+  /***************************************************************************
+   *  
+   * @description
+   *   Does a hard reset of the entire ChartComponent.
+   *   Will fetch new data if no data is given.
+   * 
+   * @param data Will use in place of fetching new chart data
+   * 
+   ***************************************************************************/
   private reloadChart(data: IntradayData = null) {
 
     if( data ) {
       this.recieveNewChartData(data);
     } else {
-      this.fetchNewChartData();
+      this.fetchNewChartData().subscribe({
+        next: this.recieveNewChartData.bind(this),
+        error: (errorData) => {
+          console.error(errorData);
+        }
+      });
     }
   }
 
-  private fetchNewChartData() {
+  /***************************************************************************
+   *  
+   * @description
+   *   Retreieves data from alpha vantage service.
+   * 
+   * @returns
+   *   An observable to deliver the data from the alpha vantage service.
+   * 
+   ***************************************************************************/
+  private fetchNewChartData(): Observable<IntradayData> {
 
     // Guard
     if( !this.symbol ) {
@@ -111,12 +170,7 @@ export class ChartComponent implements OnInit, OnChanges {
 
     switch( this.chartDataTimeSeries ) {
       case Chart.TimeSeries.intraday:
-        this.alphaVantageService.getIntraDayData( this.symbol ).subscribe(
-          this.recieveNewChartData.bind(this),
-          (err) => {
-            console.error( err );
-          }
-        );
+        return this.alphaVantageService.getIntraDayData( this.symbol );
         break;
       default:
         console.error( "Unknown chart data plot type" );
@@ -124,6 +178,15 @@ export class ChartComponent implements OnInit, OnChanges {
     }
   }
 
+   /***************************************************************************
+   *  
+   * @description
+   *   Handles when new financial data is recieved.
+   * 
+   * @param intradayData
+   *   The new financial data.
+   * 
+   ***************************************************************************/
   private recieveNewChartData( intradayData: IntradayData ) {
 
     // Cahce data set
@@ -144,6 +207,12 @@ export class ChartComponent implements OnInit, OnChanges {
     );
   }
 
+  /***************************************************************************
+   *  
+   * @description
+   *   Displays and renders all data once fetch is complete.
+   * 
+   ***************************************************************************/
   private renderChart() {
 
     // Set chart subtitle
@@ -174,14 +243,14 @@ export class ChartComponent implements OnInit, OnChanges {
     this.chart.render();
   }
 
-  /* Public */
+  /* Public ******************************************************************/
 
   constructor(
     private alphaVantageService: AlphaVantageService, 
     private datepipe: DatePipe
   ) {}
 
-  /* Lifecycle Functions */
+  /* Lifecycle Functions *****************************************************/
 
   ngOnInit() {  
     Object.values(Chart.DataPlotType).forEach( dataPlotType => {
